@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<meta charset="utf-8"/>
+
+	<title>MUSIC-GL</title>
+	<link rel="stylesheet" type="text/css" href="./css/music-player.css">
+</head>
+<body>
+	<div class="music-player" style="-webkit-app-region: drag">
+		<div class="window-btns">
+			<button class="window-btn" id="switch-visul-btn">⇋</button>
+			<button class="window-btn" id="minimize-btn">‒</button>
+			<button class="window-btn" id="maximize-btn">☐</button>
+			<button class="window-btn" id="close-btn">✕</button>
+		</div>
+		<div class="blur-filter"></div>
+		<div class="list-panel"></div>
+		<div class="right-panel">
+			<canvas class="visul-panel" id="canvas"></canvas>
+			<div class="tool-panel">
+				<div class="slider-wrapper">
+					<input title="时长" id="slider" type="range"/>
+				</div>
+				<div class="buttons-wrapper">
+					<div class="buttons">
+						<button id="prev-btn" class="tool prev"></button>
+						<button id="play-btn" class="tool play"></button>
+						<button id="next-btn" class="tool next"></button>
+					</div>
+				</div>
+				<div class="volume-wrapper">
+					<input title="音量" id="volume" max="1" min="0" step="0.01" type="range"/>
+				</div>
+				<!-- <input type="file" name="select-file" id="select-file" > -->
+			</div>
+		</div>
+	</div>
+</body>
+</html>
+<script type="text/javascript" src="./js/Music.js"></script>
+<script type="text/javascript">
+	let m=new Music();
+</script>
