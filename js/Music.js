@@ -1,6 +1,3 @@
-const fs=require('fs');
-const {ipcRenderer}=require('electron');
-
 const getNode=(key,value)=>{
     if(key=="class"){
         return document.getElementsByClassName(value);
@@ -23,23 +20,106 @@ class Music{
 		}catch(e){
 			throw new Error("please use chrome instead");
 		}
-		this.musicFolder="./media/";
+		//init audio
+		this.processor=this.context.createScriptProcessor(1024);
+		this.analyser=this.context.createAnalyser();
+		this.audio=new Audio();
+		this.index=0;
+		this.lrcTimeArray=[];
+		this.lrcStrArray=[];
 
-		this.initAudio();
+		this.audioOption={
+			defaultVolume:0.2
+		}
+
+		//init canvas
+		this.initAudio()
 		this.initWidgt();
+
 		this.visulOption={
 			type:'circle',
 			color:'rgb(255,200,200)',
 			shadowColor:'rgb(255,220,220)',
 			shadowSize:0,
 			lineWidth:7,
-			spaceBetween:3,
+			spaceBetween:1,
 			speed:5,
 			textSize:16,
 			textBetween:8,
 			textColor:'rgb(255,255,255)',
 			textShadow:2
 		}
+	}
+	initWidgt(){
+		//init nodes
+		this.musicPlayer=getNode("class","music-player")[0]
+		this.listPanel=getNode('class','list-panel')[0];
+		this.toolPanel=getNode('class',"tool-panel")[0];
+		this.canvas=getNode('id','canvas');
+		this.canvasCtx=canvas.getContext('2d');
+		this.slider=getNode('id','slider');
+		this.volume=getNode('id','volume');
+		this.prevBtn=getNode('id','prev-btn');
+		this.playBtn=getNode('id','play-btn');
+		this.nextBtn=getNode('id','next-btn')
+
+		//init medias
+		this.updateMediaList();
+
+		//init widget
+		this.slider.value=0;
+		this.volume.value=this.audioOption.defaultVolume;
+		this.audio.volume=this.volume.value;
+		this.volume.oninput=()=>{
+			this.audio.volume=this.volume.value;
+		}	
+		this.slider.oninput=()=>{
+			this.audio.currentTime=this.slider.value;
+		}
+		this.playBtn.onclick=()=>{
+			if(this.audio.src==''){
+				this.loadAudio();
+				this.loadLRC();
+			}else if(this.audio.paused){
+				this.audio.play();
+				this.playBtn.style.backgroundImage="url('./img/pause.png')";
+			}else if(!this.audio.paused){
+				this.audio.pause();
+				this.playBtn.style.backgroundImage="url('./img/play.png')";
+			}
+		}
+		this.prevBtn.onclick=()=>{
+			getNode("class","selected")[0].classList.remove("selected");
+			if(this.index>0){
+				this.index--;
+			}else{
+				this.index=this.medias.length-1;
+			}
+			getNode("class","media-item")[this.index].classList.add("selected")
+			this.loadAudio()
+			this.loadLRC();
+		}
+		this.nextBtn.onclick=()=>{
+			getNode("class","selected")[0].classList.remove("selected");
+
+			if(this.index<this.medias.length-1){
+				this.index++;
+			}else{
+				this.index=0;
+			}
+			getNode("class","media-item")[this.index].classList.add("selected")
+			this.loadLRC();
+			this.loadAudio()
+		}
+		this.resizeWidget();
+
+		//onresize
+		window.onresize=()=>{this.resizeWidget()};
+	}
+	resizeWidget(){
+		//canvas
+		this.canvas.width=getWidth(this.musicPlayer)-getWidth(this.listPanel);
+		this.canvas.height=getHeight(this.musicPlayer)-getHeight(this.toolPanel);
 	}
 	initAudio(){
 		this.processor=this.context.createScriptProcessor(1024);
@@ -66,155 +146,8 @@ class Music{
 			defaultVolume:0.3
 		}
 	}
-	initWidgt(){
-		//init nodes
-		this.musicPlayer=getNode("class","music-player")[0]
-		this.listPanel=getNode('class','list-panel')[0];
-		this.toolPanel=getNode('class',"tool-panel")[0];
-		this.canvas=getNode('id','canvas');
-		this.canvasCtx=canvas.getContext('2d');
-		this.slider=getNode('id','slider');
-		this.volume=getNode('id','volume');
-		this.prevBtn=getNode('id','prev-btn');
-		this.playBtn=getNode('id','play-btn');
-		this.nextBtn=getNode('id','next-btn')
-		this.switchBtn=getNode('id','switch-visul-btn');
-		this.minBtn=getNode('id','minimize-btn');
-		this.maxBtn=getNode('id','maximize-btn');
-		this.closeBtn=getNode('id','close-btn');
-
-		//init medias
-		fs.readFile('./config/user-data.json',(err,data)=>{
-			if(err){
-				throw err;
-			}
-			this.musicFolder=JSON.parse(data).musicFolder;
-			this.updateMediaList();
-		})
-
-
-		//init widget
-		this.slider.value=0;
-		this.volume.value=this.audioOption.defaultVolume;
-		this.audio.volume=this.volume.value;
-		this.switchBtn.onclick=()=>{
-			if(this.visulOption.type=="circle"){
-				this.visulOption.type="bar";
-			}else{
-				this.visulOption.type="circle";
-			}
-		}
-
-		ipcRenderer.on('open-files',(err,files)=>{
-			let list=[]
-			files.forEach((file)=>{
-				const pathAndName=file.replace(/\\/g,"\/");
-
-				const pathRE=/.*\//;
-				const pathStr=pathRE.exec(pathAndName)[0];
-				list.push({
-					path:pathAndName,
-					name:pathAndName.replace(pathStr,'')
-				})
-			})
-			this.copyFileFromList(list);
-		})
-		ipcRenderer.on('modify-music-folder',(err,dir)=>{
-			this.modifyMusicFolder(dir);
-		})
-
-		this.minBtn.onclick=()=>{
-			ipcRenderer.send('window-min');
-		}
-		this.maxBtn.onclick=()=>{
-			ipcRenderer.send('window-max');
-		}
-		this.closeBtn.onclick=()=>{
-			ipcRenderer.send('window-close');
-		}
-		this.listPanel.oncontextmenu=(e)=>{
-			e.preventDefault();
-    		e.stopPropagation();
-			ipcRenderer.send('list-panel-menu');
-		}
-		this.canvas.oncontextmenu=(e)=>{
-			e.preventDefault();
-    		e.stopPropagation();
-			ipcRenderer.send('canvas-menu');
-		}
-		this.musicPlayer.ondragover=(e)=>{
-			e.preventDefault();
-    		e.stopPropagation();
-			this.listPanel.style.boxShadow="-3px 0px 5px 0px rgb(255,200,200) inset";
-		}
-		this.musicPlayer.ondragleave=(e)=>{
-			e.preventDefault();
-    		e.stopPropagation();
-			this.listPanel.style.boxShadow="-3px 0px 5px 0px rgba(0,0,0,0.2) inset";
-		}
-		this.musicPlayer.ondrop=(e)=>{
-			e.preventDefault();
-    		e.stopPropagation();
-    		console.log(e);
-    		this.listPanel.style.boxShadow="-3px 0px 5px 0px rgba(0,0,0,0.2) inset";
-    		this.copyFileFromList(e.dataTransfer.files);
-		}
-
-		this.volume.oninput=()=>{
-			this.audio.volume=this.volume.value;
-		}	
-		this.slider.oninput=()=>{
-			this.audio.currentTime=this.slider.value;
-		}
-		this.playBtn.onclick=()=>{
-			if(this.audio.src==''){
-				this.loadAudio();
-				this.loadLRC();
-			}else if(this.audio.paused){
-				this.audio.play();
-				this.playBtn.style.backgroundImage="url('./img/pause.png')";
-			}else if(!this.audio.paused){
-				this.audio.pause();
-				this.playBtn.style.backgroundImage="url('./img/play.png')";
-			}
-		}
-		this.prevBtn.onclick=()=>{
-			if(this.index>0){
-				this.index--;
-			}else{
-				this.index=this.medias.length-1;
-			}
-			this.switchSelectedItem();
-			this.loadAudio();
-			this.loadLRC();
-		}
-		this.nextBtn.onclick=()=>{
-			if(this.index<this.medias.length-1){
-				this.index++;
-			}else{
-				this.index=0;
-			}
-			this.switchSelectedItem();
-
-			this.loadAudio();
-			this.loadLRC();
-
-		}
-		this.resizeWidget();
-
-		//onresize
-		window.onresize=()=>{this.resizeWidget()};
-	}
-	resizeWidget(){
-		//canvas
-		this.canvas.width=getWidth(this.musicPlayer)-getWidth(this.listPanel);
-		this.canvas.height=getHeight(this.musicPlayer)-getHeight(this.toolPanel);
-	}
 	loadAudio(){
-		console.log("loading... "+this.medias[this.index])
-		this.audio.src=this.musicFolder+this.medias[this.index];
-		// this.loadLRC();
-		//on canplay
+		this.audio.src="./medias/"+this.medias[this.index];
 		this.audio.oncanplay=()=>{
 			//set slider
 			this.slider.max=this.audio.duration;
@@ -262,20 +195,22 @@ class Music{
     			this.visulizeBar();break;
     		case 'circle':
     			this.visulizeCircle();break;
+
     	}
     	this.displayLRC();
     }
     loadLRC(){
     	this.lrcTimeArray.length=0;
     	this.lrcStrArray.length=0;
-    	fs.readFile(
-    		this.musicFolder+this.medias[this.index].replace(".mp3",".lrc"),'utf8',(err,lrc)=>{
-    		if(!lrc){
-    			return;
-    		}else{
-      			let lrcArray=lrc.split('\r\n');
-				for(let line of lrcArray){
-					line=line.replace("[","");
+    	this.xhr=new XMLHttpRequest();
+    	this.xhr.onreadystatechange=()=>{
+			if(this.xhr.readyState==4&&this.xhr.status==200){
+				const lrcRaw=eval('"'+this.xhr.responseText+'"');
+				const lrcArray=lrcRaw.split("\r\n");
+				// console.log(lrcArray);
+				// const lrcArray=[];
+				for(let i=0;i<lrcArray.length;i++){
+					let line=lrcArray[i].replace("[","");
 					let lrcTimeStr=line.split("]")[0];
 					let lrcStr=line.split("]")[1];
 					let lrcTime=parseFloat(lrcTimeStr.split(":")[0])*60+parseFloat(lrcTimeStr.split(":")[1]);
@@ -285,93 +220,70 @@ class Music{
 					this.lrcTimeArray.push(lrcTime);
 					this.lrcStrArray.push(lrcStr);
 				}
-			}	
-    	});
-    }
-    modifyMusicFolder(newPath){
-    	this.musicFolder=newPath;
-    	this.updateMediaList();
-    	const userData={
-    		"musicFolder":this.musicFolder
-    	}
-    	fs.writeFile('./config/user-data.json',JSON.stringify(userData),(err)=>{
-    		if(err){
-    			throw err;
-    		}
-    	})
-    }
-    copyFileFromList(list){
-    	for (let f of list) {
-      		fs.exists(this.musicFolder+f.name, (exists)=>{
-      			if(exists){
-      				;
-      			}else{
-      				fs.readFile(f.path,(err,file)=>{
-      					if(err){
-      						throw err;
-      					}else{
-      						fs.writeFile(this.musicFolder+f.name,file,(err)=>{
-      							if(err){
-      								throw err;
-      							}else{
-      								this.medias.push(f.name);
-    								this.updateMediaList();
-      							}
-      						});
-      					}
-      				});
-      			}
-      		})
-    	}
-    }
-    switchSelectedItem(){
-		getNode("class","selected")[0].classList.remove("selected");
-		getNode("class","media-item")[this.index].classList.add("selected")
+			}else if(this.xhr.readyState==4&&this.xhr.status!=200){
+				console.log(this.xhr.responseText);
+			}
+		}
+		console.log(this.medias[this.index].replace(".mp3",".lrc"));
+		this.xhr.open("GET","./medias/"+this.medias[this.index].replace(".mp3",".lrc"),true);
+		try{
+			this.xhr.send();
+		}catch(e){
+			throw e;
+		}
     }
     updateMediaList(){
-    	let medias=[];
-	    fs.readdir(this.musicFolder,(err, files)=>{
-			files.forEach((file)=>{
-				if(file.indexOf(".mp3")>0){
-					medias.push(file);	
+    	this.xhr=new XMLHttpRequest();
+    	this.xhr.onreadystatechange=()=>{
+    		//success
+			if(this.xhr.readyState==4&&this.xhr.status==200){
+				console.log(this.xhr.responseText);
+				let data=JSON.parse(this.xhr.responseText);
+				this.medias=data.res;
+    			console.log(this.medias)
+    			this.listPanel=getNode("class","list-panel")[0];
+    			this.listPanel.innerHTML=""
+				for(let i=0;i<this.medias.length;i++){
+					let node=document.createElement('div');
+					node.innerHTML=this.medias[i].split(".")[0];
+					node.classList.add("media-item");
+					if(i==0){
+						node.classList.add("selected")
+					};
+					node.onclick=()=>{
+						getNode("class","selected")[0].classList.remove("selected");
+						node.classList.add("selected");
+						//load audio
+						this.index=i;
+						this.loadAudio();
+						this.loadLRC();
+					}
+					this.listPanel.appendChild(node);
 				}
-			});
-			this.medias=medias;
-    		this.listPanel=getNode("class","list-panel")[0];
-    		this.listPanel.innerHTML=""
-			for(let i=0;i<this.medias.length;i++){
-				let node=document.createElement('div');
-				node.innerHTML=this.medias[i].split(".")[0];
-				node.classList.add("media-item");
-				if(i==0){
-					node.classList.add("selected")
-				};
-				node.onclick=()=>{
-					//load audio
-					this.index=i;
-					this.switchSelectedItem();
-					this.loadAudio();
-					this.loadLRC();
-				}
-				this.listPanel.appendChild(node);
+			}else if(this.xhr.readyState==4&&this.xhr.status!=200){
+				console.log(JSON.parse(this.xhr.responseText));
 			}
-		})
-    }
-    visulizeBar(){
-    	// let step=(parseInt(this.data.length/360)*4)
-    	let barTotalWidth=(this.visulOption.spaceBetween+this.visulOption.lineWidth)
-    	let barNum=parseInt(this.canvas.width/barTotalWidth);
-    	let step=parseInt(this.data.length/barNum);
-    	let offset=(this.canvas.width-barNum*barTotalWidth)/2;
-    	let barHeight=this.canvas.height/4;
+		}
+		this.xhr.open("GET","getMediaList.php",true);
+		this.xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+		this.xhr.send();
 
+    }
+    
+    visulizeBar(){
+    	let rectWidth=5;
+    	let rectHeight=this.canvas.height/4;
     	this.canvasCtx.fillStyle=this.visulOption.color;
-    	for(let i=0;i<barNum;i++){
+    	for(let i=0;
+    		i<this.data.length;
+    		i+=this.visulOption.spaceBetween
+    			+this.visulOption.lineWidth
+    	){
     		this.canvasCtx.fillRect(
-    			offset+i*barTotalWidth,
+    			rectWidth+i,
     			this.canvas.height/2,
-    			this.visulOption.lineWidth,
-    			-barHeight*(this.data[i*step]-128)/128/this.volume.value
+    			rectWidth,
+    			-rectHeight*(this.data[i]-128)/128
     		);
     	}
     }
