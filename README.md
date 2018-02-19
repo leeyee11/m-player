@@ -1,3 +1,3 @@
 # eleven-player
 ### php-ver
-a music player based on electron
+a music player based on php
