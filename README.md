@@ -1,4 +1,4 @@
-# eleven-player
+# m-player
 ## Intro
 a music player based on electron
 
