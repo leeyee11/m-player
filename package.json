@@ -1,17 +1,21 @@
 {
-  "name": "eleven-player",
+  "name": "m-player",
   "version": "1.0.0",
   "description": "electron music player",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron ."
+    "start": "./node_modules/.bin/electron ."
   },
   "author": "lyy",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "ajv": "^5.0.0"
+  },
   "devDependencies": {
-    "electron": "^1.7.12",
+    "electron": "^8.1.0",
     "electron-builder": "^19.55.3"
+  },
+  "repository": {
+    "url": "https://github.com/leeyee11/m-player.git"
   }
 }

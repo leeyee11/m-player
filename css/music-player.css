@@ -6,7 +6,7 @@
   		outline: none;
 	}
 	html,body{
-		min-width: 320px;
+		min-width: 480px;
 		width: 100%;
 		height: 100%;
 		padding: 0;
@@ -45,7 +45,7 @@
 		background-color: rgba(0,0,0,0.3);
 	}
 	.blur-filter{
-		background-image: url(../img/music-background.jpeg);
+		background-image: url(../img/music-background.jpg);
 		background-size:cover;
 		background-position: center;
 		background-repeat: no-repeat;
@@ -55,7 +55,7 @@
 		top: 0;
 		width: 100%;
 		height: 100%;
-		filter: blur(10px);
+		/* filter: blur(10px); */
 	}
 	@media screen and (max-width: 799px){
 		.list-panel{
@@ -65,19 +65,19 @@
 			height: 100%;
 			float: left;
 			width: 0px;
-			background-color: rgba(0,0,0,0.02);
+			background-color: rgba(0,0,0,0.4);
 			box-shadow: -3px 0px 5px 1px rgba(0,0,0,0.2) inset;
 		}
-		.list-panel::-webkit-scrollbar {/*滚动条整体样式*/
-        	width: 10px;     /*高宽分别对应横竖滚动条的尺寸*/
+		.list-panel::-webkit-scrollbar {
+        	width: 10px;
         	/*height: 1px;*/
     	}
-    	.list-panel::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+    	.list-panel::-webkit-scrollbar-thumb {
         	border-radius: 5px;
         	background: rgba(255,255,255,0.4);
         	box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
     	}
-		.list-panel::-webkit-scrollbar-track {/*滚动条里面轨道*/
+		.list-panel::-webkit-scrollbar-track {
        		-webkit-box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
         	border-radius: 3px;
         	background: inherit;
@@ -119,23 +119,23 @@
 			width: 240px;
 			overflow: auto;
   			-webkit-app-region: no-drag;
-			background-color: rgba(200,200,200,0.6);
+			background-color: rgba(0,0,0,0.4);
 			box-shadow: -3px 0px 5px 1px rgba(0,0,0,0.2) inset;
 		}
-		.list-panel::-webkit-scrollbar {/*滚动条整体样式*/
+		.list-panel::-webkit-scrollbar {
         	width: 6px;
         	/*background-color: inherit;*/
         	opacity: 0;
     	}
-    	.list-panel::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+    	.list-panel::-webkit-scrollbar-thumb {
         	border-radius: 5px;
         	transition: 0.5 all;
     	}
-    	.list-panel:hover::-webkit-scrollbar-thumb {/*滚动条里面小方块*/
+    	.list-panel:hover::-webkit-scrollbar-thumb {
         	background: rgba(0,0,0,0.4);
         	box-shadow: inset 0 0 3px 0px rgba(255,255,255,0.6);
     	}
-		.list-panel::-webkit-scrollbar-track {/*滚动条里面轨道*/
+		.list-panel::-webkit-scrollbar-track {
        		-webkit-box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
        		display: none;
         	border-radius: 3px;
@@ -220,19 +220,25 @@
 	}
 	.prev{
 		background-image: url('../img/prev.png');
-		background-size: 100%;
+		background-size: 60%;
+		background-position: center center;
+		background-repeat: no-repeat;
 		width: 40px;
 		height: 40px;
 	}
 	.next{
 		background-image: url('../img/next.png');
-		background-size: 100%;
+		background-size: 60%;
+		background-position: center center;
+		background-repeat: no-repeat;
 		width: 40px;
-		height: 40px;
+		height: 40px
 	}
 	.play{
 		background-image: url('../img/play.png');
-		background-size: 100%;
+		background-size: 60%;
+		background-position: center center;
+		background-repeat: no-repeat;
 		width: 50px;
 		height: 50px;
 	}
